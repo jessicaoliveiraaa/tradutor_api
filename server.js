@@ -69,3 +69,46 @@ app.post('/api/traduzir', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando com Gemini 2.5 Flash e regras ativadas na porta http://localhost:${PORT}`);
 });
+
+// --- NOVA ROTA ISOLADA PARA ÁUDIO (OPENAI) ---
+app.post('/api/audio', async (req, res) => {
+    const { texto } = req.body;
+
+    try {
+        const apiKey = process.env.OPENAI_API_KEY; 
+        
+        if (!apiKey) {
+            return res.status(500).json({ erro: 'Chave da OpenAI não configurada.' });
+        }
+
+        // Pede o áudio premium para a OpenAI
+        const response = await fetch('https://api.openai.com/v1/audio/speech', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'tts-1',
+                voice: 'nova', // Voz feminina premium
+                input: texto
+            })
+        });
+
+        if (!response.ok) throw new Error('Erro na API de Áudio da OpenAI');
+
+        // Converte a resposta em um arquivo MP3 e envia para o site
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': buffer.length
+        });
+        res.send(buffer);
+
+    } catch (error) {
+        console.error("Erro no áudio:", error);
+        res.status(500).json({ erro: error.message });
+    }
+});

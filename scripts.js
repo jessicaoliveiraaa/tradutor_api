@@ -89,17 +89,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    btnAudio.addEventListener('click', () => {
+// --- NOVO SISTEMA DE ÁUDIO SEGURO ---
+    btnAudio.addEventListener('click', async () => {
         const textoFalar = textoTraduzido.innerText;
-        const idiomaDestino = seletorDestino.value;
 
-        if (synth.speaking || !textoFalar) return;
+        // Se não tiver texto, não faz nada
+        if (!textoFalar) return;
 
-        const utterance = new SpeechSynthesisUtterance(textoFalar);
-        utterance.voice = obterVozCorreta(idiomaDestino);
-        utterance.rate = 0.9;
-        utterance.pitch = 1.0; 
+        // Desativa o botão para evitar cliques duplos enquanto carrega
+        btnAudio.disabled = true;
+        const textoOriginal = btnAudio.innerText;
+        btnAudio.innerText = 'Carregando Áudio...';
 
-        synth.speak(utterance);
+        try {
+            // Pede o áudio para a NOSSA nova rota no servidor
+            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ texto: textoFalar })
+            });
+
+            if (!response.ok) throw new Error('Falha ao gerar áudio no servidor');
+
+            // Transforma o MP3 recebido em algo que o navegador possa tocar
+            const blob = await response.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            
+            // Reativa o botão quando o áudio terminar de tocar
+            audio.onended = () => {
+                btnAudio.disabled = false;
+                btnAudio.innerText = textoOriginal;
+            };
+
+            audio.play();
+
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao carregar a pronúncia premium. Tente novamente.");
+            btnAudio.disabled = false;
+            btnAudio.innerText = textoOriginal;
+        }
     });
 });
