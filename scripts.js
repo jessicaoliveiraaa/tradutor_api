@@ -8,43 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const seletorOrigem = document.getElementById('idiomaOrigem');
     const seletorDestino = document.getElementById('idiomaDestino');
 
-    const synth = window.speechSynthesis;
-
     btnInverter.addEventListener('click', () => {
         const temp = seletorOrigem.value;
         seletorOrigem.value = seletorDestino.value;
         seletorDestino.value = temp;
     });
-
-    function obterVozCorreta(idioma) {
-        const voices = synth.getVoices();
-        let codigoIdioma = '';
-
-        if (idioma === 'Inglês') codigoIdioma = 'en';
-        else if (idioma === 'Espanhol') codigoIdioma = 'es';
-        else if (idioma === 'Japonês') codigoIdioma = 'ja';
-        else if (idioma === 'Russo') codigoIdioma = 'ru';
-        else if (idioma === 'Coreano') codigoIdioma = 'ko';
-        else if (idioma === 'Francês') codigoIdioma = 'fr';
-        else if (idioma === 'Alemão') codigoIdioma = 'de';
-        else if (idioma === 'Português') codigoIdioma = 'pt';
-
-        const vozesFiltradas = voices.filter(voice => voice.lang.startsWith(codigoIdioma));
-        if (vozesFiltradas.length === 0) return voices[0];
-
-        const vozPerfeita = vozesFiltradas.find(voice => 
-            voice.name.includes('Natural') || 
-            voice.name.includes('Google') || 
-            voice.name.includes('Premium') ||
-            voice.name.includes('Online')
-        );
-        
-        return vozPerfeita || vozesFiltradas[0];
-    }
-
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = () => synth.getVoices();
-    }
 
     btnTraduzir.addEventListener('click', async () => {
         const textoOriginal = textoPt.value.trim();
@@ -63,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('https://tradutor-api-1j66.onrender.com/api/traduzir', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Enviando explicitamente as três variáveis necessárias
                 body: JSON.stringify({ 
                     texto: textoOriginal, 
                     idiomaOrigem: idiomaOrigem, 
@@ -89,34 +56,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-// --- NOVO SISTEMA DE ÁUDIO SEGURO ---
+    // --- NOVO SISTEMA DE ÁUDIO SEGURO E DEFINITIVO ---
     btnAudio.addEventListener('click', async () => {
         const textoFalar = textoTraduzido.innerText;
+        const idiomaDestino = seletorDestino.value;
 
-        // Se não tiver texto, não faz nada
         if (!textoFalar) return;
 
-        // Desativa o botão para evitar cliques duplos enquanto carrega
         btnAudio.disabled = true;
         const textoOriginal = btnAudio.innerText;
         btnAudio.innerText = 'Carregando Áudio...';
 
         try {
-            // Pede o áudio para a NOSSA nova rota no servidor
             const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ texto: textoFalar })
+                body: JSON.stringify({ 
+                    texto: textoFalar,
+                    idiomaDestino: idiomaDestino
+                })
             });
 
             if (!response.ok) throw new Error('Falha ao gerar áudio no servidor');
 
-            // Transforma o MP3 recebido em algo que o navegador possa tocar
             const blob = await response.blob();
             const audioUrl = URL.createObjectURL(blob);
             const audio = new Audio(audioUrl);
             
-            // Reativa o botão quando o áudio terminar de tocar
             audio.onended = () => {
                 btnAudio.disabled = false;
                 btnAudio.innerText = textoOriginal;
@@ -126,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(error);
-            alert("Erro ao carregar a pronúncia premium. Tente novamente.");
+            alert("Erro ao carregar a pronúncia. Tente novamente.");
             btnAudio.disabled = false;
             btnAudio.innerText = textoOriginal;
         }

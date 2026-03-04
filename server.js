@@ -70,34 +70,29 @@ app.listen(PORT, () => {
     console.log(`Servidor rodando com Gemini 2.5 Flash e regras ativadas na porta http://localhost:${PORT}`);
 });
 
-// --- NOVA ROTA ISOLADA PARA ÁUDIO (OPENAI) ---
+// --- NOVA ROTA DE ÁUDIO (100% GRATUITA E SEM ERROS) ---
 app.post('/api/audio', async (req, res) => {
-    const { texto } = req.body;
+    const { texto, idiomaDestino } = req.body;
 
     try {
-        const apiKey = process.env.OPENAI_API_KEY; 
+        // Define o código exato do idioma selecionado no site
+        let codigoIdioma = 'en';
+        if (idiomaDestino === 'Espanhol') codigoIdioma = 'es';
+        else if (idiomaDestino === 'Japonês') codigoIdioma = 'ja';
+        else if (idiomaDestino === 'Russo') codigoIdioma = 'ru';
+        else if (idiomaDestino === 'Coreano') codigoIdioma = 'ko';
+        else if (idiomaDestino === 'Francês') codigoIdioma = 'fr';
+        else if (idiomaDestino === 'Alemão') codigoIdioma = 'de';
+        else if (idiomaDestino === 'Português') codigoIdioma = 'pt';
+
+        // O seu servidor busca o áudio MP3 de cinema direto do Google em segredo
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(texto)}&tl=${codigoIdioma}&client=tw-ob`;
         
-        if (!apiKey) {
-            return res.status(500).json({ erro: 'Chave da OpenAI não configurada.' });
-        }
+        const response = await fetch(url);
 
-        // Pede o áudio premium para a OpenAI
-        const response = await fetch('https://api.openai.com/v1/audio/speech', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'tts-1',
-                voice: 'nova', // Voz feminina premium
-                input: texto
-            })
-        });
+        if (!response.ok) throw new Error('Falha ao buscar áudio no Google');
 
-        if (!response.ok) throw new Error('Erro na API de Áudio da OpenAI');
-
-        // Converte a resposta em um arquivo MP3 e envia para o site
+        // Transforma o áudio para entregar ao site
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
