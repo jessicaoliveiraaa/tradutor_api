@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App de Tradução e Pronúncia</title>
+    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <main class="app-container">
+        <header>
+            <h1>Tradutor Interativo</h1>
+            <p>Aprenda a pronúncia exata de palavras e diálogos longos.</p>
+        </header>
+
+        <section class="translator-grid">
+            <div class="input-area">
+                <div class="controls-header">
+                    <div class="lang-box">
+                        <label for="idiomaOrigem">De:</label>
+                        <select id="idiomaOrigem" class="lang-select">
+                            <option value="Português">Português</option>
+                            <option value="Inglês">Inglês</option>
+                            <option value="Espanhol">Espanhol</option>
+                            <option value="Japonês">Japonês</option>
+                            <option value="Russo">Russo</option>
+                            <option value="Coreano">Coreano</option>
+                            <option value="Francês">Francês</option>
+                            <option value="Alemão">Alemão</option>
+                        </select>
+                    </div>
+
+                    <button id="btnInverter" class="btn-swap" title="Inverter idiomas">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+
+                    <div class="lang-box">
+                        <label for="idiomaDestino">Para:</label>
+                        <select id="idiomaDestino" class="lang-select">
+                            <option value="Inglês" selected>Inglês</option>
+                            <option value="Português">Português</option>
+                            <option value="Espanhol">Espanhol</option>
+                            <option value="Japonês">Japonês</option>
+                            <option value="Russo">Russo</option>
+                            <option value="Coreano">Coreano</option>
+                            <option value="Francês">Francês</option>
+                            <option value="Alemão">Alemão</option>
+                        </select>
+                    </div>
+                </div>
+
+                <textarea id="textoPt" placeholder="Digite suas frases, palavras ou diálogos aqui..."></textarea>
+                <button id="btnTraduzir" class="btn-primary">Traduzir Rápido</button>
+            </div>
+
+            <div class="output-area">
+                <div class="result-box">
+                    <span class="label">Tradução:</span>
+                    <p id="textoTraduzido" class="result-text"></p>
+                </div>
+
+                <div class="result-box">
+                    <span class="label">Como se fala (Aportuguesado):</span>
+                    <p id="textoPronuncia" class="result-text"></p>
+                </div>
+
+                <button id="btnAudio" class="btn-audio" disabled>
+                    <i class="fas fa-volume-up"></i> Ouvir Pronúncia Suave
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
