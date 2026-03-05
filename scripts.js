@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textoPronuncia = document.getElementById('textoPronuncia');
     const seletorOrigem = document.getElementById('idiomaOrigem');
     const seletorDestino = document.getElementById('idiomaDestino');
+    const seletorVelocidade = document.getElementById('velocidadeVoz'); // COLE ESTA LINHA AQUI
 
     btnInverter.addEventListener('click', () => {
         const temp = seletorOrigem.value;
@@ -82,7 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const blob = await response.blob();
             const audioUrl = URL.createObjectURL(blob);
             const audio = new Audio(audioUrl);
-            
+            audio.playbackRate = parseFloat(seletorVelocidade.value);
+                
             audio.onended = () => {
                 btnAudio.disabled = false;
                 btnAudio.innerText = textoOriginal;
