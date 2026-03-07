@@ -69,3 +69,42 @@ textarea:focus { outline: none; border-color: var(--primary-color); }
 .btn-audio:disabled { background-color: #9ca3af; cursor: not-allowed; }
 
 @media (max-width: 768px) { .translator-grid { grid-template-columns: 1fr; } }
+
+/* ESTILOS DO MICROFONE E FEEDBACK */
+.btn-mic {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+    color: var(--primary-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+}
+
+.btn-mic:hover {
+    background-color: #eff6ff;
+}
+
+.btn-mic.recording {
+    background-color: #ef4444; /* Vermelho piscando */
+    border-color: #ef4444;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+.feedback-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    min-height: 24px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}

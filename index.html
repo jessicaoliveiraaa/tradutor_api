@@ -15,7 +15,7 @@
             <p>Aprenda a pronúncia exata de palavras e diálogos longos.</p>
         </header>
 
-       <section class="translator-grid">
+        <section class="translator-grid">
             <div class="input-area">
                 <div class="controls-header">
                     <div class="lang-box">
@@ -77,6 +77,15 @@
                 <button id="btnAudio" class="btn-audio" disabled>
                     <i class="fas fa-volume-up"></i> Ouvir Pronúncia Suave
                 </button>
+
+                <div class="voice-practice-area" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                    <span class="label">Teste sua pronúncia:</span>
+                    <button id="btnGravar" class="btn-mic">
+                        <i class="fas fa-microphone"></i> Pressione para Falar
+                    </button>
+                    <p id="feedbackPronuncia" class="feedback-text" style="margin-top: 10px; font-size: 0.95rem; text-align: center; min-height: 24px;"></p>
+                </div>
+
             </div>
         </section>
     </main>

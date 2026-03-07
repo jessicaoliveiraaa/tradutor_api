@@ -13,11 +13,10 @@ app.post('/api/traduzir', async (req, res) => {
 
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        
-        // Atendendo ao seu pedido: Voltando para o motor super inteligente Gemini 2.5 Flash
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
-        const promptTexto = `Atue como um tradutor nativo especialista.
+        // PROMPT MELHORADO PARA GARANTIR O APORTUGUESADO PERFEITO
+        const promptTexto = `Atue como um professor de idiomas e tradutor nativo especialista.
         Origem: ${idiomaOrigem}
         Destino: ${idiomaDestino}
         Texto: "${texto}"
@@ -25,9 +24,8 @@ app.post('/api/traduzir', async (req, res) => {
         REGRAS DE TRADUÇÃO:
         1. SE O DESTINO FOR JAPONÊS: É obrigatório usar a gramática formal e educada (Teineigo - regras de masu/desu).
         2. SE O DESTINO FOR INGLÊS: Use o tom natural do dia a dia. Se a frase original for um pedido, adicione 'please' para soar educado.
-        3. PARA TODOS OS IDIOMAS: Respeite a intimidade. Ex: "Meu amor" deve ser traduzido literalmente (ex: "My love"), e nunca suavizado para "meu querido" ou "my dear".
-
-        Traduza o texto e forneça a pronúncia aportuguesada (como um brasileiro leria em voz alta de forma correta).`;
+        3. PARA TODOS OS IDIOMAS: Respeite a intimidade. Ex: "Meu amor" deve ser traduzido literalmente (ex: "My love").
+        4. APORTUGUESADO: Crie a transcrição fonética exata de como um brasileiro leria a tradução em voz alta para soar perfeito no idioma de destino. Divida por sílabas (Exemplos: "Apple" -> "É-pou", "Thank you" -> "Thênk iu", "Watashi" -> "Ua-tá-xi").`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -35,9 +33,8 @@ app.post('/api/traduzir', async (req, res) => {
             body: JSON.stringify({
                 contents: [{ parts: [{ text: promptTexto }] }],
                 generationConfig: {
-                    temperature: 0.1, // Mantém a resposta direta e sem invenções
+                    temperature: 0.1, 
                     responseMimeType: "application/json",
-                    // A MÁGICA DA VELOCIDADE NO 2.5: O responseSchema obriga a IA a cuspir os dados instantaneamente sem precisar processar exemplos de formatação no texto
                     responseSchema: {
                         type: "OBJECT",
                         properties: {
@@ -70,12 +67,10 @@ app.listen(PORT, () => {
     console.log(`Servidor rodando com Gemini 2.5 Flash e regras ativadas na porta http://localhost:${PORT}`);
 });
 
-// --- NOVA ROTA DE ÁUDIO (100% GRATUITA E SEM ERROS) ---
 app.post('/api/audio', async (req, res) => {
     const { texto, idiomaDestino } = req.body;
 
     try {
-        // Define o código exato do idioma selecionado no site
         let codigoIdioma = 'en';
         if (idiomaDestino === 'Espanhol') codigoIdioma = 'es';
         else if (idiomaDestino === 'Japonês') codigoIdioma = 'ja';
@@ -85,14 +80,12 @@ app.post('/api/audio', async (req, res) => {
         else if (idiomaDestino === 'Alemão') codigoIdioma = 'de';
         else if (idiomaDestino === 'Português') codigoIdioma = 'pt';
 
-        // O seu servidor busca o áudio MP3 de cinema direto do Google em segredo
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(texto)}&tl=${codigoIdioma}&client=tw-ob`;
         
         const response = await fetch(url);
 
         if (!response.ok) throw new Error('Falha ao buscar áudio no Google');
 
-        // Transforma o áudio para entregar ao site
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
