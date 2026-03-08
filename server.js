@@ -16,18 +16,15 @@ app.post('/api/traduzir', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
-        const promptTexto = `Atue como um professor de idiomas e tradutor nativo especialista.
+        const promptTexto = `Atue como um professor de idiomas e tradutor nativo.
         Origem: ${idiomaOrigem === 'Automático' ? 'Identifique o idioma automaticamente' : idiomaOrigem}
         Destino: ${idiomaDestino}
         Texto: "${texto}"
 
-        REGRAS DE TRADUÇÃO:
-        1. SE O DESTINO FOR JAPONÊS: É obrigatório usar a gramática formal e educada (Teineigo - regras de masu/desu).
-        2. SE O DESTINO FOR INGLÊS: Use o tom natural do dia a dia. Se a frase original for um pedido, adicione 'please'.
-        3. PARA TODOS OS IDIOMAS: Respeite a intimidade.
-        4. ALFABETO NATIVO: Se o destino for Japonês, Russo ou Coreano, a "traducao" DEVE OBRIGATORIAMENTE vir no alfabeto original do país. NUNCA coloque letras latinas na chave "traducao".
-        5. APORTUGUESADO: Crie a transcrição fonética exata de como um brasileiro leria a tradução em voz alta.
-        6. CONTEXTO: Analise o texto e classifique-o com UMA tag curta. Exemplos: "Uso Comum", "Formal", "Informal", "Gíria", "Expressão Idiomática".`;
+        REGRAS:
+        1. Traduza o texto para o ${idiomaDestino} (usando alfabeto nativo se for Japonês/Coreano/Russo).
+        2. APORTUGUESADO: Crie a transcrição fonética limpa para um brasileiro ler.
+        3. CONTEXTO: Uma palavra curta de contexto.`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -50,17 +47,16 @@ app.post('/api/traduzir', async (req, res) => {
             })
         });
 
-        if (!response.ok) throw new Error('Erro na API do Google Gemini');
+        if (!response.ok) throw new Error('Erro na API Gemini');
         const data = await response.json();
         res.json(JSON.parse(data.candidates[0].content.parts[0].text));
 
     } catch (error) {
-        console.error("Erro no servidor:", error);
         res.status(500).json({ erro: error.message });
     }
 });
 
-// --- ROTA 2: GERADOR DE DECK MÁGICO ---
+// --- ROTA 2: O GERADOR DE DECK À PROVA DE BALAS ---
 app.post('/api/deck', async (req, res) => {
     const { idiomaDestino, quantidade } = req.body;
     const qtd = quantidade || 5; 
@@ -69,11 +65,13 @@ app.post('/api/deck', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
-        const promptTexto = `Crie um minicurso rápido com ${qtd} frases curtas e extremamente úteis para o dia a dia no idioma ${idiomaDestino}.
-        REGRAS:
-        1. Se for Japonês, Russo ou Coreano, use obrigatoriamente o alfabeto nativo do país.
-        2. Forneça o aportuguesado perfeito (como um brasileiro leria em voz alta).
-        3. Dê o contexto da frase (ex: "Saudação", "Restaurante", "Emergência").`;
+        // TRATANDO A IA COMO CRIANÇA: Nomes de variáveis impossíveis de confundir
+        const promptTexto = `Gere ${qtd} frases úteis para um brasileiro que quer aprender ${idiomaDestino}.
+        Preencha o JSON EXATAMENTE com estas chaves:
+        "frase_br": A frase em Português do Brasil.
+        "frase_gringa": A frase traduzida para o ${idiomaDestino} (use alfabeto nativo se for Japonês/Russo/Coreano).
+        "pronuncia": Como um brasileiro leria a 'frase_gringa' de forma fluida (ex: Combanuá).
+        "situacao": Uma frase curta de contexto (ex: Para pedir desculpas).`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -88,12 +86,12 @@ app.post('/api/deck', async (req, res) => {
                         items: {
                             type: "OBJECT",
                             properties: {
-                                original: { type: "STRING" },
-                                traducao: { type: "STRING" },
-                                aportuguesado: { type: "STRING" },
-                                contexto: { type: "STRING" }
+                                frase_br: { type: "STRING" },
+                                frase_gringa: { type: "STRING" },
+                                pronuncia: { type: "STRING" },
+                                situacao: { type: "STRING" }
                             },
-                            required: ["original", "traducao", "aportuguesado", "contexto"]
+                            required: ["frase_br", "frase_gringa", "pronuncia", "situacao"]
                         }
                     }
                 }
@@ -102,7 +100,17 @@ app.post('/api/deck', async (req, res) => {
 
         if (!response.ok) throw new Error('Erro na API ao gerar deck');
         const data = await response.json();
-        res.json(JSON.parse(data.candidates[0].content.parts[0].text));
+        const cartasBrutas = JSON.parse(data.candidates[0].content.parts[0].text);
+
+        // MAPEAMENTO FORÇADO NO BACKEND (O segredo do sucesso)
+        const deckCorrigido = cartasBrutas.map(carta => ({
+            original: carta.frase_br,
+            traducao: carta.frase_gringa,
+            aportuguesado: carta.pronuncia,
+            contexto: carta.situacao
+        }));
+
+        res.json(deckCorrigido);
 
     } catch (error) {
         console.error("Erro no gerador de deck:", error);
