@@ -59,8 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
         badgeContexto.style.display = 'none';
 
         try {
-            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
-            const response = await fetch('http://localhost:3000/api/traduzir', {
+            // LINK OFICIAL DO RENDER
+            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/traduzir', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texto: textoOriginal, idiomaOrigem, idiomaDestino })
@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
         botaoOrigem.disabled = true;
         botaoOrigem.innerText = 'Carregando...';
         try {
-            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
-            const response = await fetch('http://localhost:3000/api/audio', {
+            // LINK OFICIAL DO RENDER
+            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texto, idiomaDestino: idioma })
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderizarCaderno() {
         listaCaderno.innerHTML = '';
         if (cadernoVocabulario.length === 0) {
-            listaCaderno.innerHTML = '<p style="color: var(--text-muted); width: 100%; grid-column: 1 / -1; text-align: center;">Caderno vazio. Crie suas cartas ou clique em "Gerar Cartas"!</p>';
+            listaCaderno.innerHTML = '<p style="color: var(--text-muted); width: 100%; grid-column: 1 / -1; text-align: center;">Caderno vazio. Crie as tuas cartas ou clica em "Gerar Cartas"!</p>';
             return;
         }
         cadernoVocabulario.forEach((item, index) => {
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarCaderno();
     });
 
-    // --- GERADOR DE DECK ---
+    // --- GERADOR DE DECK MÁGICO ---
     btnGerarDeck.addEventListener('click', async () => {
         const idioma = seletorDestino.value;
         const qtdEscolhida = document.getElementById('qtdCartas').value; 
@@ -213,8 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGerarDeck.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
 
         try {
-            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
-            const response = await fetch('http://tradutor-api-1j66.onrender.com', {
+            // LINK OFICIAL DO RENDER
+            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/deck', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idiomaDestino: idioma, quantidade: qtdEscolhida }) 
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function carregarCartaAleatoria() {
-        if(cadernoVocabulario.length === 0) { alert("Adicione palavras ou gere um deck primeiro!"); return false; }
+        if(cadernoVocabulario.length === 0) { alert("Adiciona palavras ou gera um deck primeiro!"); return false; }
         const randomIndex = Math.floor(Math.random() * cadernoVocabulario.length);
         cartaAtual = cadernoVocabulario[randomIndex];
         gameOriginal.innerText = `Como falar "${cartaAtual.original}" em ${cartaAtual.idioma}?`;
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameRec.onstart = () => {
                 isRecording = true;
                 btnGameFalar.innerHTML = '<i class="fas fa-stop"></i> Ouvindo...';
-                gameFeedback.innerText = 'Pode falar...'; gameFeedback.style.color = 'var(--text-muted)';
+                gameFeedback.innerText = 'Podes falar...'; gameFeedback.style.color = 'var(--text-muted)';
             };
             
             gameRec.onresult = (event) => {
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const corretoLimpo = limparTexto(cartaAtual.traducao.toLowerCase());
                 
                 if (ouvidoLimpo === corretoLimpo) {
-                    gameFeedback.innerHTML = '🎉 Você acertou em cheio!'; gameFeedback.style.color = '#10b981';
+                    gameFeedback.innerHTML = '🎉 Acertaste em cheio!'; gameFeedback.style.color = '#10b981';
                     qtdAcertos++;
                 } else {
                     gameFeedback.innerHTML = `❌ Quase! O certo é: ${cartaAtual.aportuguesado}`; gameFeedback.style.color = '#ef4444';
