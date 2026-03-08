@@ -89,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
         botaoOrigem.disabled = true;
         botaoOrigem.innerText = 'Carregando...';
         try {
-            // LINK OFICIAL DO RENDER
             const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -112,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tocarAudio(textoTraduzido.innerText, seletorDestino.value, seletorVelocidade.value, btnAudio, '<i class="fas fa-volume-up"></i> Ouvir Pronúncia');
     });
 
-    // --- RECONHECIMENTO DE VOZ ---
+    // --- RECONHECIMENTO DE VOZ GLOBAL ---
     let isRecording = false;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognitionAPI = null;
@@ -123,10 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (SpeechRecognition) {
         recognitionAPI = new SpeechRecognition();
-        const mapIdiomasVoz = {
-            'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR',
-            'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR'
-        };
+        const mapIdiomasVoz = { 'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR', 'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR' };
 
         if(btnGravar) {
             btnGravar.addEventListener('click', () => {
@@ -159,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- CADERNO ---
+    // --- CADERNO ATUALIZADO (NOVO LAYOUT DE CONTEXTO E BOTÕES) ---
     function renderizarCaderno() {
         listaCaderno.innerHTML = '';
         if (cadernoVocabulario.length === 0) {
@@ -169,24 +165,107 @@ document.addEventListener('DOMContentLoaded', () => {
         cadernoVocabulario.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'flashcard';
+            
+            // O replace garante que aspas não quebrem o código dos botões
+            const textoTraducaoLimpo = item.traducao.replace(/'/g, "\\'");
+            const textoAportuguesadoLimpo = item.aportuguesado.replace(/'/g, "\\'");
+
             card.innerHTML = `
-                <div style="display: flex; justify-content: space-between;">
+                <div style="margin-bottom: 5px;">
                     <div class="fc-lang">${item.idioma}</div>
                     ${item.contexto ? `<div class="fc-badge">${item.contexto}</div>` : ''}
                 </div>
                 <div class="fc-orig">"${item.original}"</div>
                 <div class="fc-trad">${item.traducao}</div>
                 <div class="fc-pron">🗣️ ${item.aportuguesado}</div>
+
+                <div class="card-actions">
+                    <button class="btn-card-audio" onclick="ouvirCarta('${textoTraducaoLimpo}', '${item.idioma}', this)">
+                        <i class="fas fa-volume-up"></i> Ouvir
+                    </button>
+                    <button class="btn-card-mic" onclick="falarCarta('${textoTraducaoLimpo}', '${item.idioma}', '${textoAportuguesadoLimpo}', this)">
+                        <i class="fas fa-microphone"></i> Falar
+                    </button>
+                </div>
+                <p class="card-feedback"></p>
+
                 <button class="btn-remover" onclick="removerDoCaderno(${index})"><i class="fas fa-trash"></i> Remover</button>
             `;
             listaCaderno.appendChild(card);
         });
     }
 
+    // Funções globais que os botões das cartas chamam
     window.removerDoCaderno = (index) => {
         cadernoVocabulario.splice(index, 1); 
         localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario)); 
         renderizarCaderno(); 
+    };
+
+    window.ouvirCarta = async (texto, idioma, botao) => {
+        const textoOriginal = botao.innerHTML;
+        botao.disabled = true;
+        botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        try {
+            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ texto: texto, idiomaDestino: idioma })
+            });
+            if (!response.ok) throw new Error('Erro');
+            const blob = await response.blob();
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            audio.onended = () => { botao.disabled = false; botao.innerHTML = textoOriginal; };
+            audio.play();
+        } catch (e) {
+            botao.disabled = false;
+            botao.innerHTML = textoOriginal;
+        }
+    };
+
+    window.falarCarta = (textoCorreto, idioma, aportuguesado, botao) => {
+        if (isRecording) return; 
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) { alert('Microfone não suportado no seu navegador.'); return; }
+
+        const cardElement = botao.closest('.flashcard');
+        const feedbackEl = cardElement.querySelector('.card-feedback');
+        const mapIdiomasVoz = { 'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR', 'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR' };
+        
+        const rec = new SpeechRecognition();
+        rec.lang = mapIdiomasVoz[idioma] || 'en-US';
+
+        rec.onstart = () => {
+            isRecording = true;
+            botao.innerHTML = '<i class="fas fa-stop"></i>';
+            botao.style.backgroundColor = '#ef4444';
+            botao.style.color = 'white';
+            feedbackEl.innerText = 'Ouvindo...';
+            feedbackEl.style.color = 'var(--text-muted)';
+        };
+
+        rec.onresult = (event) => {
+            const ouvidoLimpo = limparTexto(event.results[0][0].transcript.toLowerCase());
+            const corretoLimpo = limparTexto(textoCorreto.toLowerCase());
+
+            if (ouvidoLimpo === corretoLimpo) {
+                feedbackEl.innerHTML = '✅ Acertou!';
+                feedbackEl.style.color = '#10b981';
+            } else {
+                feedbackEl.innerHTML = `❌ Fale: ${aportuguesado}`;
+                feedbackEl.style.color = '#ef4444';
+            }
+        };
+
+        rec.onend = () => {
+            isRecording = false;
+            botao.innerHTML = '<i class="fas fa-microphone"></i> Falar';
+            botao.style.backgroundColor = 'transparent';
+            botao.style.color = 'var(--primary-color)';
+        };
+
+        rec.start();
     };
 
     btnFavoritar.addEventListener('click', () => {
@@ -204,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarCaderno();
     });
 
-    // --- GERADOR DE DECK MÁGICO ---
+    // --- GERADOR DE DECK ---
     btnGerarDeck.addEventListener('click', async () => {
         const idioma = seletorDestino.value;
         const qtdEscolhida = document.getElementById('qtdCartas').value; 
@@ -213,43 +292,34 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGerarDeck.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
 
         try {
-            // LINK OFICIAL DO RENDER
             const response = await fetch('https://tradutor-api-1j66.onrender.com/api/deck', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idiomaDestino: idioma, quantidade: qtdEscolhida }) 
             });
-            
             if (!response.ok) {
                 const erroServidor = await response.text();
                 throw new Error(`Erro do Servidor (${response.status}): ${erroServidor}`);
             }
-            
             const novasCartas = await response.json();
-            
             novasCartas.forEach(carta => {
                 carta.idioma = idioma;
                 cadernoVocabulario.unshift(carta);
             });
-
             localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario));
             renderizarCaderno();
-            
             btnGerarDeck.innerHTML = '<i class="fas fa-check"></i> Deck Criado!';
         } catch (error) {
             console.error("🕵️ ERRO COMPLETO:", error);
             alert(`Falha ao gerar o deck.\n\nDetalhes: ${error.message}`);
         } finally {
-            setTimeout(() => {
-                btnGerarDeck.disabled = false;
-                btnGerarDeck.innerHTML = '<i class="fas fa-magic"></i> Gerar Cartas';
-            }, 3000);
+            setTimeout(() => { btnGerarDeck.disabled = false; btnGerarDeck.innerHTML = '<i class="fas fa-magic"></i> Gerar Cartas'; }, 3000);
         }
     });
 
     renderizarCaderno();
 
-    // --- MINI-GAME: MODO PRÁTICA COM PLACAR ---
+    // --- MINI-GAME ---
     const modalGame = document.getElementById('modalGame');
     const btnJogar = document.getElementById('btnJogar');
     const btnFecharGame = document.getElementById('btnFecharGame');
@@ -299,7 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGameFalar.addEventListener('click', () => {
             if (isRecording) { return; } 
             const mapIdiomasVoz = { 'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR', 'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR' };
-            
             const gameRec = new SpeechRecognition();
             gameRec.lang = mapIdiomasVoz[cartaAtual.idioma] || 'en-US';
             
@@ -329,7 +398,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 isRecording = false;
                 btnGameFalar.innerHTML = '<i class="fas fa-microphone"></i> Falar';
             };
-            
             gameRec.start();
         });
     }

@@ -62,7 +62,30 @@ button:disabled { background-color: var(--border-color); color: var(--text-muted
 .label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 10px; }
 .result-text { font-size: 1.1rem; line-height: 1.5; color: var(--text-main); }
 
-.badge-contexto { padding: 4px 10px; font-size: 0.75rem; background-color: rgba(99, 102, 241, 0.1); color: var(--primary-color); border-radius: 20px; font-weight: bold; border: 1px solid var(--primary-color); }
+/* --- BLOCO DE ANOTAÇÃO (CONTEXTO) NA TELA PRINCIPAL E NAS CARTAS --- */
+.badge-contexto { 
+    padding: 4px 10px; 
+    font-size: 0.75rem; 
+    background-color: rgba(99, 102, 241, 0.1); 
+    color: var(--primary-color); 
+    border-radius: 20px; 
+    font-weight: bold; 
+    border: 1px solid var(--primary-color); 
+}
+
+.fc-badge { 
+    display: block; 
+    font-size: 0.8rem; 
+    padding: 8px 12px; 
+    background-color: rgba(99, 102, 241, 0.05); 
+    color: var(--text-muted); 
+    border-left: 3px solid var(--primary-color); 
+    border-radius: 0 6px 6px 0; 
+    margin-top: 10px; 
+    margin-bottom: 15px; 
+    line-height: 1.4; 
+    font-style: italic;
+}
 
 .voice-practice-area { margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); }
 .btn-mic { width: 100%; padding: 12px; border: 2px solid var(--primary-color); background-color: transparent; color: var(--primary-color); border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
@@ -71,12 +94,21 @@ button:disabled { background-color: var(--border-color); color: var(--text-muted
 
 .notebook-section { margin-top: 40px; padding-top: 30px; border-top: 2px solid var(--border-color); }
 .flashcards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.flashcard { background-color: transparent; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); }
-.fc-lang { font-size: 0.8rem; font-weight: 700; color: var(--primary-color); text-transform: uppercase; margin-bottom: 10px; }
+.flashcard { background-color: transparent; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.fc-lang { font-size: 0.8rem; font-weight: 700; color: var(--primary-color); text-transform: uppercase; }
 .fc-orig { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 10px; font-style: italic; }
 .fc-trad { font-size: 1.2rem; font-weight: bold; color: var(--text-main); margin-bottom: 5px; }
 .fc-pron { font-size: 1rem; color: var(--audio-color); margin-bottom: 15px; }
-.fc-badge { display: inline-block; font-size: 0.7rem; padding: 4px 8px; background: var(--border-color); color: var(--text-main); border-radius: 10px; margin-bottom: 10px; font-weight: bold; }
+
+/* --- BOTÕES DENTRO DA CARTA --- */
+.card-actions { display: flex; gap: 8px; margin-bottom: 10px; margin-top: auto; }
+.btn-card-audio, .btn-card-mic { flex: 1; padding: 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.3s; border: 1px solid var(--border-color); background: transparent; }
+.btn-card-audio { color: var(--audio-color); border-color: var(--audio-color); }
+.btn-card-audio:hover { background: var(--audio-color); color: white; }
+.btn-card-mic { color: var(--primary-color); border-color: var(--primary-color); }
+.btn-card-mic:hover { background: var(--primary-color); color: white; }
+.card-feedback { font-size: 0.8rem; text-align: center; min-height: 20px; margin-bottom: 10px; font-weight: bold; }
+
 .btn-remover { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 8px; border-radius: 6px; cursor: pointer; width: 100%; transition: 0.3s; }
 .btn-remover:hover { background-color: #ef4444; color: white; }
 
