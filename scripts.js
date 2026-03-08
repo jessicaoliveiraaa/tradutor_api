@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         badgeContexto.style.display = 'none';
 
         try {
-            // LINK OFICIAL DO RENDER
             const response = await fetch('https://tradutor-api-1j66.onrender.com/api/traduzir', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -155,20 +154,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- CADERNO ATUALIZADO (NOVO LAYOUT DE CONTEXTO E BOTÕES) ---
+    // --- CADERNO ATUALIZADO (Com proteção extra de aspas) ---
     function renderizarCaderno() {
         listaCaderno.innerHTML = '';
         if (cadernoVocabulario.length === 0) {
-            listaCaderno.innerHTML = '<p style="color: var(--text-muted); width: 100%; grid-column: 1 / -1; text-align: center;">Caderno vazio. Crie as tuas cartas ou clica em "Gerar Cartas"!</p>';
+            listaCaderno.innerHTML = '<p style="color: var(--text-muted); width: 100%; grid-column: 1 / -1; text-align: center;">Caderno vazio. Crie suas cartas ou clique em "Gerar Cartas"!</p>';
             return;
         }
         cadernoVocabulario.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'flashcard';
             
-            // O replace garante que aspas não quebrem o código dos botões
-            const textoTraducaoLimpo = item.traducao.replace(/'/g, "\\'");
-            const textoAportuguesadoLimpo = item.aportuguesado.replace(/'/g, "\\'");
+            const textoTraducaoLimpo = item.traducao.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const textoAportuguesadoLimpo = item.aportuguesado.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
             card.innerHTML = `
                 <div style="margin-bottom: 5px;">
@@ -195,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Funções globais que os botões das cartas chamam
     window.removerDoCaderno = (index) => {
         cadernoVocabulario.splice(index, 1); 
         localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario)); 
@@ -342,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function carregarCartaAleatoria() {
-        if(cadernoVocabulario.length === 0) { alert("Adiciona palavras ou gera um deck primeiro!"); return false; }
+        if(cadernoVocabulario.length === 0) { alert("Adicione palavras ou gere um deck primeiro!"); return false; }
         const randomIndex = Math.floor(Math.random() * cadernoVocabulario.length);
         cartaAtual = cadernoVocabulario[randomIndex];
         gameOriginal.innerText = `Como falar "${cartaAtual.original}" em ${cartaAtual.idioma}?`;
@@ -375,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
             gameRec.onstart = () => {
                 isRecording = true;
                 btnGameFalar.innerHTML = '<i class="fas fa-stop"></i> Ouvindo...';
-                gameFeedback.innerText = 'Podes falar...'; gameFeedback.style.color = 'var(--text-muted)';
+                gameFeedback.innerText = 'Pode falar...'; gameFeedback.style.color = 'var(--text-muted)';
             };
             
             gameRec.onresult = (event) => {
@@ -383,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const corretoLimpo = limparTexto(cartaAtual.traducao.toLowerCase());
                 
                 if (ouvidoLimpo === corretoLimpo) {
-                    gameFeedback.innerHTML = '🎉 Acertaste em cheio!'; gameFeedback.style.color = '#10b981';
+                    gameFeedback.innerHTML = '🎉 Você acertou em cheio!'; gameFeedback.style.color = '#10b981';
                     qtdAcertos++;
                 } else {
                     gameFeedback.innerHTML = `❌ Quase! O certo é: ${cartaAtual.aportuguesado}`; gameFeedback.style.color = '#ef4444';
