@@ -9,12 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const seletorDestino = document.getElementById('idiomaDestino');
     const seletorVelocidade = document.getElementById('velocidadeVoz'); 
     
-    // Elementos do microfone
     const btnGravar = document.getElementById('btnGravar');
     const feedbackPronuncia = document.getElementById('feedbackPronuncia');
+    
+    // Elementos do Caderno
+    const btnFavoritar = document.getElementById('btnFavoritar');
+    const listaCaderno = document.getElementById('listaCaderno');
+    let cadernoVocabulario = JSON.parse(localStorage.getItem('appTradutorCaderno')) || [];
 
     btnInverter.addEventListener('click', () => {
-        const temp = seletorOrigem.value;
+        // Se estiver em Automático, inverte para Português como padrão
+        const temp = seletorOrigem.value === 'Automático' ? 'Português' : seletorOrigem.value;
         seletorOrigem.value = seletorDestino.value;
         seletorDestino.value = temp;
     });
@@ -29,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTraduzir.innerText = 'Traduzindo...';
         btnTraduzir.disabled = true;
         btnAudio.disabled = true;
+        btnFavoritar.disabled = true; // Desabilita salvar até terminar
         textoTraduzido.innerText = '';
         textoPronuncia.innerText = '';
         feedbackPronuncia.innerText = ''; 
@@ -52,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             textoPronuncia.innerText = resultado.aportuguesado;
             
             btnAudio.disabled = false;
+            btnFavoritar.disabled = false; // Habilita o caderno!
 
         } catch (error) {
             textoTraduzido.innerText = "Erro ao traduzir.";
@@ -65,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     btnAudio.addEventListener('click', async () => {
         const textoFalar = textoTraduzido.innerText;
         const idiomaDestino = seletorDestino.value;
-        btnAudio.disabled = false;
         
         if (!textoFalar) return;
 
@@ -105,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- SISTEMA DE RECONHECIMENTO DE VOZ (SPEECH-TO-TEXT) ---
+    // --- SISTEMA DE RECONHECIMENTO DE VOZ ---
     let isRecording = false;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -145,13 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const textoOuvido = event.results[0][0].transcript.toLowerCase();
             const textoCorreto = textoTraduzido.innerText.toLowerCase();
 
-            // 🔥 SUPER LIMPADOR UNIVERSAL 🔥
             const limparTexto = (texto) => {
                 return texto
-                    .normalize("NFD") // Separa os acentos latinos
-                    .replace(/[\u0300-\u036f]/g, "") // Remove os acentos latinos
-                    .replace(/[.,!?¿¡;:'"。、！？「」『』\-\n\r]/g, '') // Remove pontuação do mundo todo!
-                    .replace(/\s+/g, ''); // REMOVE TODOS OS ESPAÇOS para não dar erro na comparação
+                    .normalize("NFD") 
+                    .replace(/[\u0300-\u036f]/g, "") 
+                    .replace(/[.,!?¿¡;:'"。、！？「」『』\-\n\r]/g, '') 
+                    .replace(/\s+/g, ''); 
             };
             
             const ouvidoLimpo = limparTexto(textoOuvido);
@@ -177,9 +182,63 @@ document.addEventListener('DOMContentLoaded', () => {
             btnGravar.style.backgroundColor = 'transparent';
             btnGravar.style.color = 'var(--primary-color)';
         };
-
     } else if (btnGravar) {
         btnGravar.disabled = true;
         btnGravar.innerText = 'Navegador não suporta voz.';
     }
+
+    // --- LÓGICA DO CADERNO DE VOCABULÁRIO ---
+    function renderizarCaderno() {
+        listaCaderno.innerHTML = '';
+        
+        if (cadernoVocabulario.length === 0) {
+            listaCaderno.innerHTML = '<p style="color: #64748b; width: 100%; grid-column: 1 / -1;">Seu caderno está vazio. Traduza algo e clique em "Salvar no Caderno"!</p>';
+            return;
+        }
+
+        cadernoVocabulario.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'flashcard';
+            card.innerHTML = `
+                <div class="fc-lang">${item.idioma}</div>
+                <div class="fc-orig">"${item.original}"</div>
+                <div class="fc-trad">${item.traducao}</div>
+                <div class="fc-pron">🗣️ ${item.aportuguesado}</div>
+                <button class="btn-remover" onclick="removerDoCaderno(${index})">
+                    <i class="fas fa-trash"></i> Remover
+                </button>
+            `;
+            listaCaderno.appendChild(card);
+        });
+    }
+
+    window.removerDoCaderno = (index) => {
+        cadernoVocabulario.splice(index, 1); 
+        localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario)); 
+        renderizarCaderno(); 
+    };
+
+    btnFavoritar.addEventListener('click', () => {
+        const novoCard = {
+            original: textoPt.value.trim(),
+            traducao: textoTraduzido.innerText,
+            aportuguesado: textoPronuncia.innerText,
+            idioma: seletorDestino.value
+        };
+
+        cadernoVocabulario.unshift(novoCard); 
+        localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario));
+        
+        btnFavoritar.innerHTML = '<i class="fas fa-check"></i> Salvo!';
+        btnFavoritar.disabled = true;
+        
+        setTimeout(() => {
+            btnFavoritar.innerHTML = '<i class="fas fa-bookmark"></i> Salvar no Caderno';
+            btnFavoritar.disabled = false;
+        }, 2000);
+
+        renderizarCaderno();
+    });
+
+    renderizarCaderno();
 });

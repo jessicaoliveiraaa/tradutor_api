@@ -21,6 +21,7 @@
                     <div class="lang-box">
                         <label for="idiomaOrigem">De:</label>
                         <select id="idiomaOrigem" class="lang-select">
+                            <option value="Automático" selected>Detectar Automático 🪄</option>
                             <option value="Português">Português</option>
                             <option value="Inglês">Inglês</option>
                             <option value="Espanhol">Espanhol</option>
@@ -78,7 +79,7 @@
                     <i class="fas fa-volume-up"></i> Ouvir Pronúncia Suave
                 </button>
 
-                <div class="voice-practice-area" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                <div class="voice-practice-area" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
                     <span class="label">Teste sua pronúncia:</span>
                     <button id="btnGravar" class="btn-mic">
                         <i class="fas fa-microphone"></i> Pressione para Falar
@@ -86,8 +87,20 @@
                     <p id="feedbackPronuncia" class="feedback-text" style="margin-top: 10px; font-size: 0.95rem; text-align: center; min-height: 24px;"></p>
                 </div>
 
+                <button id="btnFavoritar" class="btn-favoritar" disabled style="margin-top: 15px;">
+                    <i class="fas fa-bookmark"></i> Salvar no Caderno
+                </button>
             </div>
         </section>
+
+        <section class="notebook-section" style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
+            <h2 style="color: var(--primary-color); margin-bottom: 20px;">
+                <i class="fas fa-book-open"></i> Meu Caderno de Vocabulário
+            </h2>
+            <div id="listaCaderno" class="flashcards-grid">
+                </div>
+        </section>
+        
     </main>
 
     <script src="scripts.js"></script>

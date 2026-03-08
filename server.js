@@ -15,9 +15,9 @@ app.post('/api/traduzir', async (req, res) => {
         const apiKey = process.env.GEMINI_API_KEY;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         
-        // PROMPT MELHORADO PARA GARANTIR O APORTUGUESADO PERFEITO
+        // PROMPT ATUALIZADO: Suporte para detecção automática e alfabeto nativo
         const promptTexto = `Atue como um professor de idiomas e tradutor nativo especialista.
-        Origem: ${idiomaOrigem}
+        Origem: ${idiomaOrigem === 'Automático' ? 'Identifique o idioma automaticamente' : idiomaOrigem}
         Destino: ${idiomaDestino}
         Texto: "${texto}"
 
@@ -25,7 +25,8 @@ app.post('/api/traduzir', async (req, res) => {
         1. SE O DESTINO FOR JAPONÊS: É obrigatório usar a gramática formal e educada (Teineigo - regras de masu/desu).
         2. SE O DESTINO FOR INGLÊS: Use o tom natural do dia a dia. Se a frase original for um pedido, adicione 'please' para soar educado.
         3. PARA TODOS OS IDIOMAS: Respeite a intimidade. Ex: "Meu amor" deve ser traduzido literalmente (ex: "My love").
-        4. APORTUGUESADO: Crie a transcrição fonética exata de como um brasileiro leria a tradução em voz alta para soar perfeito no idioma de destino. Divida por sílabas (Exemplos: "Apple" -> "É-pou", "Thank you" -> "Thênk iu", "Watashi" -> "Ua-tá-xi").`;
+        4. ALFABETO NATIVO: Se o destino for Japonês, Russo ou Coreano, a "traducao" DEVE OBRIGATORIAMENTE vir no alfabeto original do país (Kanji/Hiragana/Katakana, Hangul, Cirílico). NUNCA coloque letras latinas (Romaji/Romaja/etc) na chave "traducao".
+        5. APORTUGUESADO: Crie a transcrição fonética exata de como um brasileiro leria a tradução em voz alta. Divida por sílabas (Ex: "Apple" -> "É-pou", "Watashi" -> "Ua-tá-xi").`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -64,7 +65,7 @@ app.post('/api/traduzir', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Servidor rodando com Gemini 2.5 Flash e regras ativadas na porta http://localhost:${PORT}`);
+    console.log(`Servidor rodando na porta http://localhost:${PORT}`);
 });
 
 app.post('/api/audio', async (req, res) => {
