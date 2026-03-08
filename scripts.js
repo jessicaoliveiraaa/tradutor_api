@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const textoPt = document.getElementById('textoPt');
     const textoTraduzido = document.getElementById('textoTraduzido');
     const textoPronuncia = document.getElementById('textoPronuncia');
+    const badgeContexto = document.getElementById('badgeContexto');
     const seletorOrigem = document.getElementById('idiomaOrigem');
     const seletorDestino = document.getElementById('idiomaDestino');
     const seletorVelocidade = document.getElementById('velocidadeVoz'); 
@@ -12,13 +13,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGravar = document.getElementById('btnGravar');
     const feedbackPronuncia = document.getElementById('feedbackPronuncia');
     
-    // Elementos do Caderno
     const btnFavoritar = document.getElementById('btnFavoritar');
+    const btnGerarDeck = document.getElementById('btnGerarDeck'); 
     const listaCaderno = document.getElementById('listaCaderno');
     let cadernoVocabulario = JSON.parse(localStorage.getItem('appTradutorCaderno')) || [];
 
+    // --- MODO NOTURNO ---
+    const btnTema = document.getElementById('btnTema');
+    if (localStorage.getItem('temaEscuro') === 'sim') {
+        document.body.classList.add('dark-mode');
+        btnTema.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+    btnTema.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        if (document.body.classList.contains('dark-mode')) {
+            localStorage.setItem('temaEscuro', 'sim');
+            btnTema.innerHTML = '<i class="fas fa-sun"></i>';
+        } else {
+            localStorage.setItem('temaEscuro', 'nao');
+            btnTema.innerHTML = '<i class="fas fa-moon"></i>';
+        }
+    });
+
+    // --- TRADUÇÃO NORMAL ---
     btnInverter.addEventListener('click', () => {
-        // Se estiver em Automático, inverte para Português como padrão
         const temp = seletorOrigem.value === 'Automático' ? 'Português' : seletorOrigem.value;
         seletorOrigem.value = seletorDestino.value;
         seletorDestino.value = temp;
@@ -34,179 +52,132 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTraduzir.innerText = 'Traduzindo...';
         btnTraduzir.disabled = true;
         btnAudio.disabled = true;
-        btnFavoritar.disabled = true; // Desabilita salvar até terminar
+        btnFavoritar.disabled = true; 
         textoTraduzido.innerText = '';
         textoPronuncia.innerText = '';
         feedbackPronuncia.innerText = ''; 
+        badgeContexto.style.display = 'none';
 
         try {
-            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/traduzir', {
+            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
+            const response = await fetch('http://localhost:3000/api/traduzir', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    texto: textoOriginal, 
-                    idiomaOrigem: idiomaOrigem, 
-                    idiomaDestino: idiomaDestino 
-                })
+                body: JSON.stringify({ texto: textoOriginal, idiomaOrigem, idiomaDestino })
             });
-
-            if (!response.ok) throw new Error('Falha na comunicação com o servidor.');
-
+            if (!response.ok) throw new Error('Falha na comunicação.');
             const resultado = await response.json();
 
             textoTraduzido.innerText = resultado.traducao;
             textoPronuncia.innerText = resultado.aportuguesado;
-            
+            if (resultado.contexto) {
+                badgeContexto.innerText = resultado.contexto;
+                badgeContexto.style.display = 'inline-block';
+            }
             btnAudio.disabled = false;
-            btnFavoritar.disabled = false; // Habilita o caderno!
-
+            btnFavoritar.disabled = false;
         } catch (error) {
             textoTraduzido.innerText = "Erro ao traduzir.";
-            console.error(error);
         } finally {
             btnTraduzir.innerText = 'Traduzir Rápido';
             btnTraduzir.disabled = false;
         }
     });
 
-    btnAudio.addEventListener('click', async () => {
-        const textoFalar = textoTraduzido.innerText;
-        const idiomaDestino = seletorDestino.value;
-        
-        if (!textoFalar) return;
-
-        btnAudio.disabled = true;
-        const textoOriginal = btnAudio.innerText;
-        btnAudio.innerText = 'Carregando Áudio...';
-
+    // --- ÁUDIO GLOBAL ---
+    async function tocarAudio(texto, idioma, taxa, botaoOrigem, textoBotaoOriginal) {
+        botaoOrigem.disabled = true;
+        botaoOrigem.innerText = 'Carregando...';
         try {
-            const response = await fetch('https://tradutor-api-1j66.onrender.com/api/audio', {
+            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
+            const response = await fetch('http://localhost:3000/api/audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    texto: textoFalar,
-                    idiomaDestino: idiomaDestino
-                })
+                body: JSON.stringify({ texto, idiomaDestino: idioma })
             });
-
-            if (!response.ok) throw new Error('Falha ao gerar áudio no servidor');
-
+            if (!response.ok) throw new Error('Erro áudio');
             const blob = await response.blob();
             const audioUrl = URL.createObjectURL(blob);
             const audio = new Audio(audioUrl);
-            audio.playbackRate = parseFloat(seletorVelocidade.value);
-            
-            audio.onended = () => {
-                btnAudio.disabled = false;
-                btnAudio.innerText = textoOriginal;
-            };
-
+            audio.playbackRate = parseFloat(taxa);
+            audio.onended = () => { botaoOrigem.disabled = false; botaoOrigem.innerHTML = textoBotaoOriginal; };
             audio.play();
-
         } catch (error) {
-            console.error(error);
-            alert("Erro ao carregar a pronúncia. Tente novamente.");
-            btnAudio.disabled = false;
-            btnAudio.innerText = textoOriginal;
+            botaoOrigem.disabled = false;
+            botaoOrigem.innerHTML = textoBotaoOriginal;
         }
-    });
-
-    // --- SISTEMA DE RECONHECIMENTO DE VOZ ---
-    let isRecording = false;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (SpeechRecognition && btnGravar) {
-        const recognition = new SpeechRecognition();
-        
-        const mapIdiomasVoz = {
-            'Inglês': 'en-US',
-            'Espanhol': 'es-ES',
-            'Japonês': 'ja-JP',
-            'Português': 'pt-BR',
-            'Francês': 'fr-FR',
-            'Alemão': 'de-DE',
-            'Russo': 'ru-RU',
-            'Coreano': 'ko-KR'
-        };
-
-        btnGravar.addEventListener('click', () => {
-            if (isRecording) {
-                recognition.stop();
-                return;
-            }
-            recognition.lang = mapIdiomasVoz[seletorDestino.value] || 'en-US';
-            recognition.start();
-        });
-
-        recognition.onstart = () => {
-            isRecording = true;
-            btnGravar.innerHTML = '<i class="fas fa-stop"></i> Ouvindo... (Fale agora)';
-            btnGravar.style.backgroundColor = '#ef4444'; 
-            btnGravar.style.color = 'white';
-            feedbackPronuncia.innerText = 'Escutando sua pronúncia...';
-            feedbackPronuncia.style.color = '#64748b'; 
-        };
-
-        recognition.onresult = (event) => {
-            const textoOuvido = event.results[0][0].transcript.toLowerCase();
-            const textoCorreto = textoTraduzido.innerText.toLowerCase();
-
-            const limparTexto = (texto) => {
-                return texto
-                    .normalize("NFD") 
-                    .replace(/[\u0300-\u036f]/g, "") 
-                    .replace(/[.,!?¿¡;:'"。、！？「」『』\-\n\r]/g, '') 
-                    .replace(/\s+/g, ''); 
-            };
-            
-            const ouvidoLimpo = limparTexto(textoOuvido);
-            const corretoLimpo = limparTexto(textoCorreto);
-
-            if (ouvidoLimpo === corretoLimpo) {
-                feedbackPronuncia.innerHTML = `✅ <strong>Perfeito!</strong> O app entendeu: "${textoOuvido}"`;
-                feedbackPronuncia.style.color = '#10b981'; 
-            } else {
-                feedbackPronuncia.innerHTML = `❌ <strong>Quase lá!</strong> Entendemos: "${textoOuvido}". <br> Leia o aportuguesado e tente de novo!`;
-                feedbackPronuncia.style.color = '#ef4444'; 
-            }
-        };
-
-        recognition.onerror = (event) => {
-            feedbackPronuncia.innerText = 'Não consegui escutar. Verifique a permissão do microfone.';
-            feedbackPronuncia.style.color = '#ef4444';
-        };
-
-        recognition.onend = () => {
-            isRecording = false;
-            btnGravar.innerHTML = '<i class="fas fa-microphone"></i> Pressione para Falar';
-            btnGravar.style.backgroundColor = 'transparent';
-            btnGravar.style.color = 'var(--primary-color)';
-        };
-    } else if (btnGravar) {
-        btnGravar.disabled = true;
-        btnGravar.innerText = 'Navegador não suporta voz.';
     }
 
-    // --- LÓGICA DO CADERNO DE VOCABULÁRIO ---
+    btnAudio.addEventListener('click', () => {
+        tocarAudio(textoTraduzido.innerText, seletorDestino.value, seletorVelocidade.value, btnAudio, '<i class="fas fa-volume-up"></i> Ouvir Pronúncia');
+    });
+
+    // --- RECONHECIMENTO DE VOZ ---
+    let isRecording = false;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognitionAPI = null;
+    
+    const limparTexto = (texto) => {
+        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,!?¿¡;:'"。、！？「」『』\-\n\r]/g, '').replace(/\s+/g, ''); 
+    };
+
+    if (SpeechRecognition) {
+        recognitionAPI = new SpeechRecognition();
+        const mapIdiomasVoz = {
+            'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR',
+            'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR'
+        };
+
+        if(btnGravar) {
+            btnGravar.addEventListener('click', () => {
+                if (isRecording) { recognitionAPI.stop(); return; }
+                recognitionAPI.lang = mapIdiomasVoz[seletorDestino.value] || 'en-US';
+                recognitionAPI.onstart = () => {
+                    isRecording = true;
+                    btnGravar.innerHTML = '<i class="fas fa-stop"></i> Ouvindo...';
+                    btnGravar.style.backgroundColor = '#ef4444'; btnGravar.style.color = 'white';
+                    feedbackPronuncia.innerText = 'Pode falar...'; feedbackPronuncia.style.color = 'var(--text-muted)'; 
+                };
+                recognitionAPI.onresult = (event) => {
+                    const ouvidoLimpo = limparTexto(event.results[0][0].transcript.toLowerCase());
+                    const corretoLimpo = limparTexto(textoTraduzido.innerText.toLowerCase());
+                    if (ouvidoLimpo === corretoLimpo) {
+                        feedbackPronuncia.innerHTML = `✅ <strong>Perfeito!</strong> Entendido: "${event.results[0][0].transcript}"`;
+                        feedbackPronuncia.style.color = '#10b981'; 
+                    } else {
+                        feedbackPronuncia.innerHTML = `❌ <strong>Quase lá!</strong> Entendido: "${event.results[0][0].transcript}"`;
+                        feedbackPronuncia.style.color = '#ef4444'; 
+                    }
+                };
+                recognitionAPI.onend = () => {
+                    isRecording = false;
+                    btnGravar.innerHTML = '<i class="fas fa-microphone"></i> Pressione para Falar';
+                    btnGravar.style.backgroundColor = 'transparent'; btnGravar.style.color = 'var(--primary-color)';
+                };
+                recognitionAPI.start();
+            });
+        }
+    }
+
+    // --- CADERNO ---
     function renderizarCaderno() {
         listaCaderno.innerHTML = '';
-        
         if (cadernoVocabulario.length === 0) {
-            listaCaderno.innerHTML = '<p style="color: #64748b; width: 100%; grid-column: 1 / -1;">Seu caderno está vazio. Traduza algo e clique em "Salvar no Caderno"!</p>';
+            listaCaderno.innerHTML = '<p style="color: var(--text-muted); width: 100%; grid-column: 1 / -1; text-align: center;">Caderno vazio. Crie suas cartas ou clique em "Gerar Cartas"!</p>';
             return;
         }
-
         cadernoVocabulario.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'flashcard';
             card.innerHTML = `
-                <div class="fc-lang">${item.idioma}</div>
+                <div style="display: flex; justify-content: space-between;">
+                    <div class="fc-lang">${item.idioma}</div>
+                    ${item.contexto ? `<div class="fc-badge">${item.contexto}</div>` : ''}
+                </div>
                 <div class="fc-orig">"${item.original}"</div>
                 <div class="fc-trad">${item.traducao}</div>
                 <div class="fc-pron">🗣️ ${item.aportuguesado}</div>
-                <button class="btn-remover" onclick="removerDoCaderno(${index})">
-                    <i class="fas fa-trash"></i> Remover
-                </button>
+                <button class="btn-remover" onclick="removerDoCaderno(${index})"><i class="fas fa-trash"></i> Remover</button>
             `;
             listaCaderno.appendChild(card);
         });
@@ -219,26 +190,147 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnFavoritar.addEventListener('click', () => {
-        const novoCard = {
+        cadernoVocabulario.unshift({
             original: textoPt.value.trim(),
             traducao: textoTraduzido.innerText,
             aportuguesado: textoPronuncia.innerText,
-            idioma: seletorDestino.value
-        };
-
-        cadernoVocabulario.unshift(novoCard); 
+            idioma: seletorDestino.value,
+            contexto: badgeContexto.innerText !== '' && badgeContexto.style.display !== 'none' ? badgeContexto.innerText : 'Uso Comum'
+        }); 
         localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario));
-        
         btnFavoritar.innerHTML = '<i class="fas fa-check"></i> Salvo!';
         btnFavoritar.disabled = true;
-        
-        setTimeout(() => {
-            btnFavoritar.innerHTML = '<i class="fas fa-bookmark"></i> Salvar no Caderno';
-            btnFavoritar.disabled = false;
-        }, 2000);
-
+        setTimeout(() => { btnFavoritar.innerHTML = '<i class="fas fa-bookmark"></i> Salvar no Caderno'; btnFavoritar.disabled = false; }, 2000);
         renderizarCaderno();
     });
 
+    // --- GERADOR DE DECK ---
+    btnGerarDeck.addEventListener('click', async () => {
+        const idioma = seletorDestino.value;
+        const qtdEscolhida = document.getElementById('qtdCartas').value; 
+        
+        btnGerarDeck.disabled = true;
+        btnGerarDeck.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+
+        try {
+            // CORRIGIDO PARA O SEU AMBIENTE DE TESTE LOCAL
+            const response = await fetch('http://tradutor-api-1j66.onrender.com', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idiomaDestino: idioma, quantidade: qtdEscolhida }) 
+            });
+            
+            if (!response.ok) {
+                const erroServidor = await response.text();
+                throw new Error(`Erro do Servidor (${response.status}): ${erroServidor}`);
+            }
+            
+            const novasCartas = await response.json();
+            
+            novasCartas.forEach(carta => {
+                carta.idioma = idioma;
+                cadernoVocabulario.unshift(carta);
+            });
+
+            localStorage.setItem('appTradutorCaderno', JSON.stringify(cadernoVocabulario));
+            renderizarCaderno();
+            
+            btnGerarDeck.innerHTML = '<i class="fas fa-check"></i> Deck Criado!';
+        } catch (error) {
+            console.error("🕵️ ERRO COMPLETO:", error);
+            alert(`Falha ao gerar o deck.\n\nDetalhes: ${error.message}`);
+        } finally {
+            setTimeout(() => {
+                btnGerarDeck.disabled = false;
+                btnGerarDeck.innerHTML = '<i class="fas fa-magic"></i> Gerar Cartas';
+            }, 3000);
+        }
+    });
+
     renderizarCaderno();
+
+    // --- MINI-GAME: MODO PRÁTICA COM PLACAR ---
+    const modalGame = document.getElementById('modalGame');
+    const btnJogar = document.getElementById('btnJogar');
+    const btnFecharGame = document.getElementById('btnFecharGame');
+    const btnGameOuvir = document.getElementById('btnGameOuvir');
+    const btnGameFalar = document.getElementById('btnGameFalar');
+    const btnProxCarta = document.getElementById('btnProxCarta');
+    const gameOriginal = document.getElementById('gameOriginal');
+    const gameIdioma = document.getElementById('gameIdioma');
+    const gameFeedback = document.getElementById('gameFeedback');
+    
+    const placarAcertosElement = document.getElementById('placarAcertos');
+    const placarErrosElement = document.getElementById('placarErros');
+    let qtdAcertos = 0;
+    let qtdErros = 0;
+    let cartaAtual = null;
+
+    function atualizarPlacar() {
+        placarAcertosElement.innerText = qtdAcertos;
+        placarErrosElement.innerText = qtdErros;
+    }
+
+    function carregarCartaAleatoria() {
+        if(cadernoVocabulario.length === 0) { alert("Adicione palavras ou gere um deck primeiro!"); return false; }
+        const randomIndex = Math.floor(Math.random() * cadernoVocabulario.length);
+        cartaAtual = cadernoVocabulario[randomIndex];
+        gameOriginal.innerText = `Como falar "${cartaAtual.original}" em ${cartaAtual.idioma}?`;
+        gameIdioma.innerText = cartaAtual.idioma;
+        gameFeedback.innerText = '';
+        btnProxCarta.style.display = 'none';
+        btnGameFalar.style.display = 'inline-block'; 
+        return true;
+    }
+
+    btnJogar.addEventListener('click', () => { 
+        qtdAcertos = 0; qtdErros = 0; atualizarPlacar(); 
+        if(carregarCartaAleatoria()) modalGame.style.display = 'flex'; 
+    });
+    
+    btnFecharGame.addEventListener('click', () => { modalGame.style.display = 'none'; });
+    btnProxCarta.addEventListener('click', carregarCartaAleatoria);
+
+    btnGameOuvir.addEventListener('click', () => {
+        tocarAudio(cartaAtual.traducao, cartaAtual.idioma, 1.0, btnGameOuvir, '<i class="fas fa-volume-up"></i> Dica');
+    });
+
+    if (SpeechRecognition) {
+        btnGameFalar.addEventListener('click', () => {
+            if (isRecording) { return; } 
+            const mapIdiomasVoz = { 'Inglês': 'en-US', 'Espanhol': 'es-ES', 'Japonês': 'ja-JP', 'Português': 'pt-BR', 'Francês': 'fr-FR', 'Alemão': 'de-DE', 'Russo': 'ru-RU', 'Coreano': 'ko-KR' };
+            
+            const gameRec = new SpeechRecognition();
+            gameRec.lang = mapIdiomasVoz[cartaAtual.idioma] || 'en-US';
+            
+            gameRec.onstart = () => {
+                isRecording = true;
+                btnGameFalar.innerHTML = '<i class="fas fa-stop"></i> Ouvindo...';
+                gameFeedback.innerText = 'Pode falar...'; gameFeedback.style.color = 'var(--text-muted)';
+            };
+            
+            gameRec.onresult = (event) => {
+                const ouvidoLimpo = limparTexto(event.results[0][0].transcript.toLowerCase());
+                const corretoLimpo = limparTexto(cartaAtual.traducao.toLowerCase());
+                
+                if (ouvidoLimpo === corretoLimpo) {
+                    gameFeedback.innerHTML = '🎉 Você acertou em cheio!'; gameFeedback.style.color = '#10b981';
+                    qtdAcertos++;
+                } else {
+                    gameFeedback.innerHTML = `❌ Quase! O certo é: ${cartaAtual.aportuguesado}`; gameFeedback.style.color = '#ef4444';
+                    qtdErros++;
+                }
+                atualizarPlacar();
+                btnProxCarta.style.display = 'inline-block'; 
+                btnGameFalar.style.display = 'none'; 
+            };
+            
+            gameRec.onend = () => {
+                isRecording = false;
+                btnGameFalar.innerHTML = '<i class="fas fa-microphone"></i> Falar';
+            };
+            
+            gameRec.start();
+        });
+    }
 });

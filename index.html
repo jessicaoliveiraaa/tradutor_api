@@ -9,6 +9,10 @@
 </head>
 <body>
 
+    <button id="btnTema" class="btn-theme" title="Alternar Modo Escuro/Claro">
+        <i class="fas fa-moon"></i>
+    </button>
+
     <main class="app-container">
         <header>
             <h1>Tradutor Interativo</h1>
@@ -52,13 +56,16 @@
                     </div>
                 </div>
 
-                <textarea id="textoPt" placeholder="Digite suas frases, palavras ou diálogos aqui..."></textarea>
+                <textarea id="textoPt" placeholder="Digite suas frases ou palavras aqui..."></textarea>
                 <button id="btnTraduzir" class="btn-primary">Traduzir Rápido</button>
             </div>
 
             <div class="output-area">
                 <div class="result-box">
-                    <span class="label">Tradução:</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span class="label" style="margin-bottom: 0;">Tradução:</span>
+                        <span id="badgeContexto" class="badge-contexto" style="display: none;">Uso Comum</span>
+                    </div>
                     <p id="textoTraduzido" class="result-text"></p>
                 </div>
 
@@ -68,7 +75,7 @@
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <label for="velocidadeVoz" class="label" style="margin-bottom: 0;">Velocidade da Voz:</label>
+                    <label for="velocidadeVoz" class="label" style="margin-bottom: 0;">Velocidade:</label>
                     <select id="velocidadeVoz" class="lang-select" style="width: 50%; padding: 8px;">
                         <option value="1.0" selected>Normal (1x) 🗣️</option>
                         <option value="0.6">Estudo (0.6x) 🐢</option>
@@ -76,32 +83,68 @@
                 </div>
 
                 <button id="btnAudio" class="btn-audio" disabled>
-                    <i class="fas fa-volume-up"></i> Ouvir Pronúncia Suave
+                    <i class="fas fa-volume-up"></i> Ouvir Pronúncia
                 </button>
 
-                <div class="voice-practice-area" style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <div class="voice-practice-area">
                     <span class="label">Teste sua pronúncia:</span>
                     <button id="btnGravar" class="btn-mic">
                         <i class="fas fa-microphone"></i> Pressione para Falar
                     </button>
-                    <p id="feedbackPronuncia" class="feedback-text" style="margin-top: 10px; font-size: 0.95rem; text-align: center; min-height: 24px;"></p>
+                    <p id="feedbackPronuncia" class="feedback-text"></p>
                 </div>
 
-                <button id="btnFavoritar" class="btn-favoritar" disabled style="margin-top: 15px;">
+                <button id="btnFavoritar" class="btn-favoritar" disabled>
                     <i class="fas fa-bookmark"></i> Salvar no Caderno
                 </button>
             </div>
         </section>
 
-        <section class="notebook-section" style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
-            <h2 style="color: var(--primary-color); margin-bottom: 20px;">
-                <i class="fas fa-book-open"></i> Meu Caderno de Vocabulário
-            </h2>
-            <div id="listaCaderno" class="flashcards-grid">
+        <section class="notebook-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="color: var(--primary-color);">
+                    <i class="fas fa-book-open"></i> Meu Caderno
+                </h2>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="qtdCartas" class="lang-select" style="padding: 10px; border-radius: 8px; width: auto;">
+                        <option value="5">5 cartas</option>
+                        <option value="10" selected>10 cartas</option>
+                        <option value="15">15 cartas</option>
+                    </select>
+                    <button id="btnGerarDeck" class="btn-secundary">
+                        <i class="fas fa-magic"></i> Gerar Cartas
+                    </button>
+                    <button id="btnJogar" class="btn-jogar">
+                        <i class="fas fa-gamepad"></i> Jogar!
+                    </button>
                 </div>
+            </div>
+            <div id="listaCaderno" class="flashcards-grid"></div>
         </section>
         
     </main>
+
+    <div id="modalGame" class="modal-overlay">
+        <div class="modal-content">
+            <button id="btnFecharGame" class="btn-fechar">&times;</button>
+            <h3 style="color: var(--text-main); margin-bottom: 5px;">Modo Prática 🎯</h3>
+            <div class="scoreboard">
+                <span class="score-verde">✅ <span id="placarAcertos">0</span></span>
+                <span class="score-vermelho">❌ <span id="placarErros">0</span></span>
+            </div>
+            
+            <div class="game-card">
+                <span id="gameIdioma" class="fc-lang" style="display: block; text-align: center;"></span>
+                <p id="gameOriginal" class="fc-orig" style="text-align: center; font-size: 1.2rem; margin: 15px 0;"></p>
+                <div class="game-actions">
+                    <button id="btnGameOuvir" class="btn-audio" style="width: auto; padding: 10px 20px;"><i class="fas fa-volume-up"></i> Dica</button>
+                    <button id="btnGameFalar" class="btn-mic" style="width: auto; padding: 10px 20px; margin-bottom: 0;"><i class="fas fa-microphone"></i> Falar</button>
+                </div>
+                <p id="gameFeedback" class="feedback-text" style="margin-top: 15px; font-weight: bold; font-size: 1.1rem;"></p>
+            </div>
+            <button id="btnProxCarta" class="btn-primary" style="margin-top: 20px; display: none;">Próxima Carta <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
 
     <script src="scripts.js"></script>
 </body>
