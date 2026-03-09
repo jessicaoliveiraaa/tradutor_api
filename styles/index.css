@@ -120,4 +120,60 @@ button:disabled { background-color: var(--border-color); color: var(--text-muted
 .game-card { border: 2px dashed var(--border-color); padding: 30px; border-radius: 8px; margin-top: 10px; }
 .game-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
 
-@media (max-width: 768px) { .translator-grid { grid-template-columns: 1fr; } .game-actions { flex-direction: column; } }
+@media (max-width: 768px) { 
+    /* Coloca as áreas de texto uma embaixo da outra */
+    .translator-grid { 
+        grid-template-columns: 1fr; 
+    } 
+
+    /* Reduz os espaçamentos externos para não espremer o app no celular */
+    body {
+        padding: 20px 10px;
+    }
+    
+    /* Reduz o espaçamento interno do container branco */
+    .app-container { 
+        padding: 20px 15px; 
+    }
+
+    /* Empilha os seletores de idioma e ajusta o espaçamento */
+    .controls-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px; 
+    }
+    
+    /* Some com a seta no mobile */
+    .btn-swap {
+        display: none; 
+    }
+
+    /* Garante que os flashcards ocupem a tela toda e não vazem */
+    .flashcards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Ajusta os botões do jogo/modal */
+    .game-actions { 
+        flex-direction: column; 
+    } 
+
+    .modal-content {
+        padding: 25px 15px;
+        width: 95%;
+    }
+}
+
+/* Ajuste do botão de tema para mobile */
+    .btn-theme {
+        top: 22px; 
+        right: 15px;
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+    }
+
+    /* Empurra o cabeçalho para baixo para o botão não sobrepor o título */
+    header {
+        margin-top: 35px; 
+    }
